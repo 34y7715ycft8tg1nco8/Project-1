@@ -1,10 +1,13 @@
+
+from sklearn.cluster import DBSCAN
 import networkx as nx
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import csv
+import string
 
-# Transforming data from csv to a matrix (2D list). The purpose of this transformation is for scaling and simplicity for my probabilistic agent
+# Transforming data from csv to a matrix (2D list). 
 Meteor_path = "/Users/eduardolopez858/Downloads/Project-1/meteorite-landings.csv"
 WorldCities_path = "/Users/eduardolopez858/Downloads/Project-1/worldcitiespop.csv"
 with open(Meteor_path, mode="r", newline="") as file1:
@@ -13,7 +16,7 @@ with open (WorldCities_path, mode="r", newline="") as file2:
     CityData = list(csv.reader(file2))
 
 '''
-# Number of observations
+# Data Analysis
 print("Total number of observations: ", len(MeteorData) - 1)
 print("For each observation, we are given the following information about each meteorite: ", MeteorData[0])
 # Analyzing each column 
@@ -30,65 +33,78 @@ print("The year column tells us the year the meteorite was discovered or fell gi
 # Continuously distributed: name, nametype, mass, reclat, reclong, Geolocation. Although, this data can be categorized in a way that makes it discrete.
 '''
 
-'''
-# Modeling our Data using NetworkX
-model = nx.DiGraph()
-variables = ['Mass', 'Location', 'Time', 'Frequency', 'Frequency on location', 'Danger level']
-model.add_nodes_from(variables)
-model.add_edge('Mass', 'Danger level')
-model.add_edge('Location', 'Frequency on location')
-model.add_edge('Time', 'Frequency')
-model.add_edge('Frequency', 'Danger level')
-model.add_edge('Frequency', 'Frequency on location')
-nx.draw(model, with_labels = True)
-plt.show()
-'''
 
 # Main Inference
-class Meteorite_BN:
+class BN:
     # constructer (not including headers of data)
-    def __init__(self, MeteorData, CityData):
-        self.MeteorData = MeteorData[1:]
-        self.CityData = CityData[1:]
+    def __init__(self, meteor_data, city_data):
+        self.meteor_data = meteor_data[1:]
+        self.city_data = city_data[1:]
 
-    # categorizing meteor mass on low, medium, or high
-    def mass_category(meteor):
-            mass = meteor[0][4]
-            if mass <= 10:
-                return 'low'
-            elif mass < 10 and mass <= 1000:
-                return 'medium'
-            elif mass >= 1000:
-                return 'high'
-            
-    # getting 10 year span frequency and putting it into a category of low, medium, or high
-    def frequency_decade(year, MeteorData):
+    # categorizing mass of meteorite based on Nasa classification
+    def mass_evidence(self, meteor):
+        mass_kg = meteor[4]
+        if mass_kg <= 10:
+            return 'Small'
+        if mass_kg > 10 and mass_kg <= 1000:
+            return 'Medium'
+        if mass_kg > 1000:
+            return "Large"
+        
+    # getting all decade's frequencies
+    def frequency_by_decade(self, city):
+        decade_counts = {}
         # getting past decade of current year
-        counts = {}
-        for meteor in MeteorData:
-            try:
-                year = int(meteor[0][6])  
+        for meteor in self.meteor_data:
+            if city == meteor[0]:
+                year = int(meteor[6])
                 decade = (year // 10) * 10
-                counts[decade] = counts.get(decade, 0) + 1
-            except ValueError:
-                continue  # Skip missing years
+                decade_counts[decade] = decade_counts.get(decade, 0) + 1
+        return decade_counts
+    
+    # computing prior's based on time (partitioned into decades)
+    def prior(self, decade_counts):
+        total = sum(decade_counts.values())
+        return {decade: count / total for decade, count in decade_counts.items()}
 
-        # Get frequency for the given decade
-        frequency = counts.get(decade, 0)
-        # returning the frequency category
-        if frequency <= 50:
-            return 'low'
-        elif frequency > 50 and frequency <= 150:
-            return 'medium'
-        elif frequency < 150:
-            return 'high'
+    # main computation 1: predicting next decade on city and country (user preference)
 
-    # 
+    # frequency by city
+    def likelyhood_city_next10(self,city):
+        frequencies = self.frequency_by_decade(city)
+        if not frequencies:
+            return None
+        priors = self.prior(frequencies)
+        if not priors:
+            return None
+        # naive bayes
+        posterior = {decade + 10: priors[decade] for decade in priors}
+        if not posterior:
+            return None
+        # normalization
+        for i in posterior:
+            posterior[i] /= sum(posterior.values())
+        # max likelyhood
+        predicted_decade = max(posterior, key=posterior.get)
+        return int(posterior[predicted_decade] * sum(frequencies.values()))
+
+    ## improved inference with the use of data clustering will go below
+   
 
 
-     
-            
-            
+
+
+
+
+
+
+
+
+meteorite_bn = BN(MeteorData, CityData)
+prediction = meteorite_bn.likelyhood_city_next10("Phum Sambo")
+print(prediction)
+
+
 
     
     
