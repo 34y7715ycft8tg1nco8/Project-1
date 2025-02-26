@@ -1,7 +1,8 @@
 
 from sklearn.cluster import DBSCAN
-import networkx as nx
+from collections import Counter
 import matplotlib.pyplot as plt
+import networkx as nx
 import pandas as pd
 import numpy as np
 import csv
@@ -9,11 +10,8 @@ import string
 
 # Transforming data from csv to a matrix (2D list). 
 Meteor_path = "/Users/eduardolopez858/Downloads/Project-1/meteorite-landings.csv"
-WorldCities_path = "/Users/eduardolopez858/Downloads/Project-1/worldcitiespop.csv"
 with open(Meteor_path, mode="r", newline="") as file1:
     MeteorData = list(csv.reader(file1))
-with open (WorldCities_path, mode="r", newline="") as file2:
-    CityData = list(csv.reader(file2))
 
 '''
 # Data Analysis
@@ -33,54 +31,53 @@ print("The year column tells us the year the meteorite was discovered or fell gi
 # Continuously distributed: name, nametype, mass, reclat, reclong, Geolocation. Although, this data can be categorized in a way that makes it discrete.
 '''
 
-
 # Main Inference
 class BN:
     # constructer (not including headers of data)
-    def __init__(self, meteor_data, city_data):
+    def __init__(self, meteor_data):
         self.meteor_data = meteor_data[1:]
-        self.city_data = city_data[1:]
-
     # categorizing mass of meteorite based on Nasa classification
     def mass_evidence(self, meteor):
-        mass_kg = meteor[4]
-        if mass_kg <= 10:
-            return 'Small'
-        if mass_kg > 10 and mass_kg <= 1000:
-            return 'Medium'
-        if mass_kg > 1000:
-            return "Large"
+        mass_kg = int(meteor[4])
+        if mass_kg <= 1:
+            return 'Harmless. Most likely burn up in the atmosphere'
+        if mass_kg > 1 and mass_kg <= 10:
+            return 'Some property damage'
+        if mass_kg > 10 and mass_kg <= 100:
+            return "More localized damage, may cause injuries"
+        if mass_kg > 100 and mass_kg <= 10000:
+            return "Huge shockwave. May destory buildings"
+        if mass_kg > 10000 and mass_kg <= 1000000:
+            return "Regional threat. May destory entire cities and even cause tsunamis"
+        if mass_kg > 1000000:
+            return "Global threat. Mass extinctions"
         
-    # getting all decade's frequencies
-    def frequency_by_decade(self, city):
+    # getting all decade frequencies
+    def frequency_by_decade(self, name):
         decade_counts = {}
         # getting past decade of current year
         for meteor in self.meteor_data:
-            if city == meteor[0]:
+            if name == meteor[0]:
                 year = int(meteor[6])
                 decade = (year // 10) * 10
                 decade_counts[decade] = decade_counts.get(decade, 0) + 1
         return decade_counts
-    
-    # computing prior's based on time (partitioned into decades)
-    def prior(self, decade_counts):
-        total = sum(decade_counts.values())
-        return {decade: count / total for decade, count in decade_counts.items()}
 
-    # main computation 1: predicting next decade on city and country (user preference)
-
-    # frequency by city
+    # inference of the next decade of given city
     def likelyhood_city_next10(self,city):
+        # collecting frequencies of given city
         frequencies = self.frequency_by_decade(city)
         if not frequencies:
-            return None
-        priors = self.prior(frequencies)
+            return 0
+        # prior
+        total = sum(frequencies.values())
+        priors = {decade: count / total for decade, count in frequencies.items()}
         if not priors:
-            return None
+            return 0
         # naive bayes
         posterior = {decade + 10: priors[decade] for decade in priors}
         if not posterior:
-            return None
+            return 0
         # normalization
         for i in posterior:
             posterior[i] /= sum(posterior.values())
@@ -88,23 +85,34 @@ class BN:
         predicted_decade = max(posterior, key=posterior.get)
         return int(posterior[predicted_decade] * sum(frequencies.values()))
 
-    ## improved inference with the use of data clustering will go below
-   
+    # inference of the danger level of the meteor on city based on mass
+    def danger_likelyhood(self, city):
+        mass_data = []
+        for meteor in self.meteor_data:
+            if city == meteor[0]:
+                mass_data.append(self.mass_evidence(meteor))
+        freq_inference = self.likelyhood_city_next10(city)
+        counts = Counter(mass_data)
+        # highest likelyhood mass
+        if not counts:
+            return 0
+        highest_likelyhood_mass = max(counts, key=counts.get)
+        # likelyhood mass and normalization
+        probabilty_mass = 0
+        for mass in mass_data:
+            if mass == highest_likelyhood_mass:
+                probabilty_mass += 1
+        # normalize
+        probabilty_mass /= len(mass_data)
+        print("Mass: ", highest_likelyhood_mass, " With kikelyhood: ", str(probabilty_mass))
 
-
-
-
-
-
-
-
-
-
-meteorite_bn = BN(MeteorData, CityData)
-prediction = meteorite_bn.likelyhood_city_next10("Phum Sambo")
-print(prediction)
-
-
-
-    
-    
+# user input (using my model)
+city_input = input("Enter City: ")
+# inference call
+meteorite_bn = BN(MeteorData)
+prediction_for_city = meteorite_bn.likelyhood_city_next10(city_input)
+danger_level = meteorite_bn.danger_likelyhood(city_input)
+if prediction_for_city == 0:
+    print("In the next decade, there will be ", prediction_for_city, " meteorite landings in ", city_input,".")
+else:
+    print("In the next decade, there will be ", prediction_for_city, " meteorite landings in ", city_input,".")
