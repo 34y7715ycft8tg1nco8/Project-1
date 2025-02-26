@@ -5,7 +5,7 @@ Conclusion:
 My 1st model predicts the next 10 year outcomes on meteorite frequencies based on prior 10 year spans. Although, I notice this type of inference is not as accurate as I want it to be because it rely's only on a single given city to do an inference on the next 10 years. I can improve my next model with a more accurate prediction using an improved set of evidence, that is, utilizing the entire timeline of the dataset to preproccess and cluster(sklearn) the frequencies of the meteorite landings and find a pattern to predict the likelyhood of meteorite landings on a given city using regional coordinates. My model 1 diagram demonstrates each of the important variables for this current model. The top 3 nodes are evidence, which the frequency node depends on to preprocess the data and be used as evidecne for the final two inference nodes of the network which are the frequency of the next 10 years and danger level(which uses mass evidence) of a given city. 
 
 Link to code script I have so far:
-
+https://github.com/34y7715ycft8tg1nco8/Project-1/blob/Milestone2/Meteorite_Inference.py
 Link to the current model diagram:
 
 
