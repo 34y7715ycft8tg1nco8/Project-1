@@ -7,7 +7,7 @@ My 1st model predicts the next 10 year outcomes on meteorite frequencies based o
 Link to code script I have so far:
 https://github.com/34y7715ycft8tg1nco8/Project-1/blob/Milestone2/Meteorite_Inference.py
 Link to the current model diagram:
-
+https://github.com/34y7715ycft8tg1nco8/Project-1/blob/Milestone2/Project%201%20Model.pdf
 
 
 ### Previous
