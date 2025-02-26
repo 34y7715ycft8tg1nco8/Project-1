@@ -1,5 +1,10 @@
 # Project-1
 ## Milestone2
+### Updated:
+
+
+
+
 
 ### Overview:
 My A.I agent will be goal based agent that will predict and model meteorite fall frequencies(in 10 year spans), geographical locations(countries, cities, etc.) that are most likely to experience these meteorite landings, and predict the likelihood of the destruction a meteorite can cause, all with the help of the main meteorite dataset I'll be using from Nasa that allows for these predictions and calculations to be made and an additional worldwide dataset that correlates cities with countries.
